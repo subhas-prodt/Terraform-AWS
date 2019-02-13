@@ -1,4 +1,4 @@
-## Terraform Installation
+### Terraform Installation
 
 1. Download the terraform binary file https://www.terraform.io/downloads.html
 
