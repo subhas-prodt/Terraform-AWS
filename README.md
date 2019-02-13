@@ -6,9 +6,9 @@
 
 3. Make sure that the terraform binary is available on the PATH.
 
-echo $"export PATH=\$PATH:$(pwd)" >> ~/.bash_profile
+   echo $"export PATH=\$PATH:$(pwd)" >> ~/.bash_profile
 
-source ~/.bash_profile
+   source ~/.bash_profile
 
 4. Run : terraform init
 
