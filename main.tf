@@ -3,7 +3,7 @@ provider "aws" {
   secret_key = "${var.secret_key}"
   region = "${var.region}"
 }
-
+ 
 resource "aws_vpc" "terraformmain" {
     cidr_block = "${var.cidr_block}"
     enable_dns_support = true
@@ -11,7 +11,7 @@ resource "aws_vpc" "terraformmain" {
     tags {
       Name = "My NEW VPC"
     }
-}
+} 
 
 resource "aws_subnet" "PublicSubnet" {
   vpc_id = "${aws_vpc.terraformmain.id}"
@@ -52,6 +52,7 @@ resource "aws_route_table_association" "PublicAssociation" {
     route_table_id = "${aws_route_table.public.id}"
 }
 
+/*
 resource "aws_eip" "forNat" {
     vpc      = true
 }
@@ -61,6 +62,42 @@ resource "aws_nat_gateway" "NAT" {
     subnet_id = "${aws_subnet.PrivateSubnet.id}"
     depends_on = ["aws_internet_gateway.gw"]
 }
+*/
+
+
+resource "aws_security_group" "nat" {
+  # name = "Database"
+  tags {
+        Name = "NAT_SG"
+  }
+  vpc_id = "${aws_vpc.terraformmain.id}"
+  ingress {
+      from_port   = "0"
+      to_port     = "0"
+      protocol    = "-1"
+      cidr_blocks = ["0.0.0.0/0"]
+  }
+  egress {
+    from_port = 0
+    to_port = 0
+    protocol = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+}
+
+resource "aws_instance" "nat" {
+
+  ami = "${lookup(var.nat_ami, var.region)}"
+  instance_type = "t2.micro"
+  associate_public_ip_address = "true"
+  subnet_id = "${aws_subnet.PublicSubnet.id}"
+  source_dest_check = "false"
+  vpc_security_group_ids = ["${aws_security_group.nat.id}"]
+  key_name = "${var.key_name}"
+  tags {
+        Name = "NAT_instance"
+  }
+}
 
 resource "aws_route_table" "private" {
   vpc_id = "${aws_vpc.terraformmain.id}"
@@ -69,10 +106,10 @@ resource "aws_route_table" "private" {
   }
   route {
         cidr_block = "0.0.0.0/0"
-        nat_gateway_id = "${aws_nat_gateway.NAT.id}"
+        instance_id = "${aws_instance.nat.id}"
+        # nat_gateway_id = "${module.foundation_ec2-nat-instances.id}"
   }
 }
-
 
 resource "aws_route_table_association" "PrivateAssociation" {
     subnet_id = "${aws_subnet.PrivateSubnet.id}"
@@ -107,6 +144,25 @@ resource "aws_security_group" "FrontEnd" {
   }
 }
 
+resource "aws_security_group" "SSH_only" {
+  tags {
+        Name = "SSH_only"
+  }
+  vpc_id = "${aws_vpc.terraformmain.id}"
+  ingress {
+      from_port   = "22"
+      to_port     = "22"
+      protocol    = "TCP"
+      cidr_blocks = ["0.0.0.0/0"]
+  }
+  egress {
+    from_port = 0
+    to_port = 0
+    protocol = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+}
+
 resource "aws_instance" "PublicServer" {
   #source  = "terraform-aws-modules/ec2-instance/aws"
   #version = "1.14.0"
@@ -117,7 +173,21 @@ resource "aws_instance" "PublicServer" {
   associate_public_ip_address = "true"
   subnet_id = "${aws_subnet.PublicSubnet.id}"
   vpc_security_group_ids = ["${aws_security_group.FrontEnd.id}"]
+  key_name = "${var.key_name}"
   tags {
         Name = "Public_Server"
+  }
+}
+
+
+resource "aws_instance" "Private_Server" {
+  ami           = "${lookup(var.ami, var.region)}"
+  instance_type = "t2.micro"
+  associate_public_ip_address = "false"
+  subnet_id = "${aws_subnet.PrivateSubnet.id}"
+  vpc_security_group_ids = ["${aws_security_group.SSH_only.id}"]
+  key_name = "${var.key_name}"
+  tags {
+        Name = "Private_Server"
   }
 }
