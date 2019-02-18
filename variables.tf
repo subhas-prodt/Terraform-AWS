@@ -1,16 +1,27 @@
 variable "region" {
- default = "us-east-1"
+ default = "us-east-2"
 }
 
 variable "ami" {
   type = "map"
   default = {
-    us-east-1 = "ami-b73b63a0" # Virginia
-    us-west-2 = "ami-5ec1673e" # Oregon
-    eu-west-1 = "ami-9398d3e0" # Ireland
-    us-east-2 = "ami-ea87a78f" # Ohio
+    us-east-1 = "ami-0f9cf087c1f27d9b1" # Virginia
+    us-east-2 = "ami-0653e888ec96eab9b" # Ohio
   }
-  description = "I add only 3 regions (Virginia, Oregon, Ireland) to show the map feature but you can add all the regions that you need"
+  description = "You can add all regions here"
+}
+
+variable "nat_ami" {
+  type = "map"
+  default = {
+    us-east-1 = "ami-00a9d4a05375b2763" # Virginia
+    us-east-2 = "ami-00d1f8201864cc10c" # Ohio
+  }
+  description = "NAT instance ami"
+}
+
+variable "key_name" {
+ default = "Ohio-Key"
 }
 
 variable "access_key" {
@@ -32,3 +43,4 @@ variable "public_cidr_block" {
 variable "private_cidr_block" {
  default = "172.28.3.0/24"
 }
+
